@@ -1,0 +1,11 @@
+inf_system\lab2\client\model\Person.class
+inf_system\lab2\client\service\GatewayService$GatewayException.class
+inf_system\lab2\client\web\ClientController.class
+inf_system\lab2\client\model\Coordinates.class
+inf_system\lab2\client\model\LabWorkForm.class
+inf_system\lab2\client\ClientApplication.class
+inf_system\lab2\client\model\ApiError.class
+inf_system\lab2\client\model\LabWork.class
+inf_system\lab2\client\service\GatewayService$1.class
+inf_system\lab2\client\service\GatewayService.class
+inf_system\lab2\client\model\Difficulty.class

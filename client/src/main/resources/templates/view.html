@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>LabWork</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<header>
+    <h1 th:text="${title != null ? title : 'Лабораторная работа'}">Лабораторная работа</h1>
+    <nav>
+        <a th:href="@{/}">Коллекция</a>
+        <a th:href="@{/labworks/new}">Добавить</a>
+    </nav>
+</header>
+<main>
+    <div class="error" th:if="${error}" th:text="${error}"></div>
+    <div class="message" th:if="${message}" th:text="${message}"></div>
+
+    <div th:if="${labWork}">
+        <table class="detail">
+            <tr><th>ID</th><td th:text="${labWork.id}"></td></tr>
+            <tr><th>Название</th><td th:text="${labWork.name}"></td></tr>
+            <tr>
+                <th>Координаты</th>
+                <td th:text="${labWork.coordinates != null ? 'x=' + labWork.coordinates.x + ', y=' + labWork.coordinates.y : '—'}"></td>
+            </tr>
+            <tr>
+                <th>Дата создания</th>
+                <td th:text="${labWork.creationDate != null ? #temporals.format(labWork.creationDate, 'yyyy-MM-dd HH:mm:ss') : '—'}"></td>
+            </tr>
+            <tr><th>minimalPoint</th><td th:text="${labWork.minimalPoint}"></td></tr>
+            <tr><th>personalQualitiesMinimum</th><td th:text="${labWork.personalQualitiesMinimum}"></td></tr>
+            <tr><th>averagePoint</th><td th:text="${labWork.averagePoint}"></td></tr>
+            <tr><th>Сложность</th><td th:text="${labWork.difficulty}"></td></tr>
+            <tr th:if="${labWork.author != null}">
+                <th>Автор</th>
+                <td>
+                    <p th:text="'Имя: ' + ${labWork.author.name}"></p>
+                    <p th:text="'Дата рождения: ' + (${labWork.author.birthday} != null ? ${labWork.author.birthday} : '—')"></p>
+                    <p th:text="'Рост: ' + (${labWork.author.height} != null ? ${labWork.author.height} : '—')"></p>
+                    <p th:text="'Вес: ' + ${labWork.author.weight}"></p>
+                    <p th:text="'Паспорт: ' + (${labWork.author.passportID} != null ? ${labWork.author.passportID} : '—')"></p>
+                </td>
+            </tr>
+            <tr th:unless="${labWork.author != null}"><th>Автор</th><td>—</td></tr>
+        </table>
+
+        <section class="actions">
+            <a th:href="@{'/labworks/' + ${labWork.id} + '/edit'}">Изменить</a>
+
+            <form method="post"
+                  th:action="@{'/bars/labwork/' + ${labWork.id} + '/increase'}"
+                  style="display:inline">
+                <input type="number" name="steps" min="1" value="1" style="width:60px"/>
+                <button type="submit">Повысить сложность (Bars)</button>
+            </form>
+
+            <form method="post"
+                  th:action="@{'/bars/discipline/1/labwork/' + ${labWork.id} + '/add'}"
+                  style="display:inline">
+                <button type="submit">Добавить в дисциплину 1 (Bars)</button>
+            </form>
+        </section>
+    </div>
+</main>
+</body>
+</html>

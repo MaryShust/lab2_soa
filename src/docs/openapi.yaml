@@ -1,0 +1,946 @@
+﻿openapi: 3.0.3
+
+info:
+  title: LabWork SOA API
+  version: 2.2.0
+  description: |
+    Спецификация двух веб-сервисов, управляющих коллекцией объектов класса `LabWork`.
+
+    * **Первый сервис** (LabWork Service) — управление коллекцией лабораторных работ
+      (CRUD, фильтрация, сортировка, пагинация, а также специальные операции агрегации).
+    * **Второй сервис** (Bars Service, `/bars`) — дополнительные операции поверх API первого сервиса.
+
+    Все операции следуют принципам RESTful. Данные передаются в формате `application/json`.
+    Для создания/обновления объектов все поля передаются через **query-параметры**
+    (тело запроса не используется).
+
+servers:
+  - url: https://localhost:8181
+    description: Первый сервис (LabWork Service, HTTPS, Payara)
+  - url: https://localhost:8443/bars
+    description: Второй сервис (Bars Service, HTTPS, WildFly)
+
+tags:
+  - name: labwork
+    description: Базовые и специализированные операции над коллекцией лабораторных работ
+  - name: bars
+    description: Дополнительные операции второго сервиса, вызывающие первый сервис
+
+paths:
+  /labworks:
+    get:
+      tags: [labwork]
+      operationId: getLabWorks
+      summary: Получить массив элементов коллекции
+      description: |
+        Возвращает массив лабораторных работ. Поддерживает пагинацию, единый параметр сортировки
+        и единый параметр фильтрации. Все параметры передаются через query-строку.
+
+        
+        ## Сортировка (`sort`)
+        Единый параметр сортировки. Формат: `поле:направление`, где направление — `asc` или `desc`.
+        Несколько правил разделяются запятой. Правила применяются последовательно: первое правило —
+        первичный ключ сортировки, второе — вторичный и т.д. Поддерживается сортировка по **любому**
+        полю класса, включая вложенные (`coordinates.x`, `coordinates.y`, `author.name`,
+        `author.birthday`, `author.height`, `author.weight`, `author.passportID`).
+        Полный список допустимых полей — в схеме `SortField`.
+
+        Пример: `?sort=name:asc,coordinates.x:desc,author.height:asc`
+
+        ## Фильтрация (`filter`)
+        Единый параметр фильтрации. Формат условия: `поле:оператор:значение`.
+        Несколько условий разделяются запятой и объединяются логическим **AND**.
+        Поддерживается фильтрация по **любому** полю класса, включая вложенные.
+        Полный список допустимых полей — в схеме `FilterField`, операторов — в схеме `FilterOperator`.
+        Применимость операторов к типам описана в схеме `FilterOperator`.
+
+        Пример: `?filter=difficulty:eq:TERRIBLE,minimalPoint:gt:10,author.name:contains:Ivan`
+
+        ## Пагинация
+        Параметры `page` (номер страницы, начиная с 1) и `size` (размер страницы).
+        По умолчанию: `page=1`, `size=50`. Максимальный размер страницы — 1000.
+        Если `page` выходит за пределы доступного диапазона, возвращается пустой массив.
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/size'
+        - $ref: '#/components/parameters/sort'
+        - $ref: '#/components/parameters/filter'
+      responses:
+        '200':
+          description: Успешный ответ. Массив элементов коллекции.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LabWork'
+        '400':
+          description: |
+            Невалидные параметры запроса.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                invalidSortField:
+                  summary: Неизвестное поле сортировки
+                  value:
+                    status: 400
+                    message: "Неизвестное поле сортировки: foo"
+                invalidFilterOperator:
+                  summary: Оператор не применим к типу поля
+                  value:
+                    status: 400
+                    message: "Оператор contains не применим к полю minimalPoint"
+                invalidPaging:
+                  summary: Некорректная пагинация
+                  value:
+                    status: 400
+                    message: "Параметр size должен быть в диапазоне [1, 1000]"
+        '500':
+          description: Внутренняя ошибка сервера.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: "Внутренняя ошибка сервера"
+
+    post:
+      tags: [labwork]
+      operationId: addLabWork
+      summary: Добавить новый элемент коллекции
+      description: |
+        Создаёт новый объект `LabWork`. Все данные передаются через query-параметры
+        (тело запроса не используется). Возвращает созданный объект с автоматически
+        сгенерированными полями `id` и `creationDate`.
+      parameters:
+        - $ref: '#/components/parameters/qName'
+        - $ref: '#/components/parameters/qX'
+        - $ref: '#/components/parameters/qY'
+        - $ref: '#/components/parameters/qMinimalPoint'
+        - $ref: '#/components/parameters/qPersonalQualitiesMinimum'
+        - $ref: '#/components/parameters/qAveragePoint'
+        - $ref: '#/components/parameters/qDifficulty'
+        - $ref: '#/components/parameters/qAuthorName'
+        - $ref: '#/components/parameters/qAuthorBirthday'
+        - $ref: '#/components/parameters/qAuthorHeight'
+        - $ref: '#/components/parameters/qAuthorWeight'
+        - $ref: '#/components/parameters/qAuthorPassportID'
+      responses:
+        '201':
+          description: Объект успешно создан.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabWork'
+        '400':
+          description: Некорректные данные, нарушающие ограничения целостности.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: "Данные нарушают ограничения целостности"
+        '500':
+          description: Внутренняя ошибка сервера.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: "Внутренняя ошибка сервера"
+
+  /labworks/{id}:
+
+    delete:
+      tags: [labwork]
+      operationId: deleteLabWork
+      summary: Удалить элемент по идентификатору
+      description: Удаляет объект коллекции с указанным `id`. При успехе тело ответа пустое.
+      parameters:
+        - $ref: '#/components/parameters/qId'
+      responses:
+        '204':
+          description: Объект успешно удалён. Тело ответа отсутствует.
+        '400':
+          description: Некорректный идентификатор (например, отрицательное значение).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: "Некорректный идентификатор"
+        '404':
+          description: Объект с таким id не найден.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: "Лабораторная работа не найдена"
+        '500':
+          description: Внутренняя ошибка сервера.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: "Внутренняя ошибка сервера"
+
+
+    put:
+      tags: [ labwork ]
+      operationId: updateLabWork
+      summary: Обновить элемент по идентификатору
+      description: |
+        Полностью заменяет объект коллекции с указанным `id`.
+        Идентификатор и все данные передаются через query-параметры.
+      parameters:
+        - $ref: '#/components/parameters/qId'
+        - $ref: '#/components/parameters/qName'
+        - $ref: '#/components/parameters/qX'
+        - $ref: '#/components/parameters/qY'
+        - $ref: '#/components/parameters/qMinimalPoint'
+        - $ref: '#/components/parameters/qPersonalQualitiesMinimum'
+        - $ref: '#/components/parameters/qAveragePoint'
+        - $ref: '#/components/parameters/qDifficulty'
+        - $ref: '#/components/parameters/qAuthorName'
+        - $ref: '#/components/parameters/qAuthorBirthday'
+        - $ref: '#/components/parameters/qAuthorHeight'
+        - $ref: '#/components/parameters/qAuthorWeight'
+        - $ref: '#/components/parameters/qAuthorPassportID'
+      responses:
+        '200':
+          description: Объект успешно обновлён.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabWork'
+        '400':
+          description: Некорректный идентификатор или данные, нарушающие ограничения целостности.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: "Некорректный идентификатор или данные"
+        '404':
+          description: Объект с таким id не найден.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: "Лабораторная работа не найдена"
+        '500':
+          description: Внутренняя ошибка сервера.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: "Внутренняя ошибка сервера"
+
+    get:
+      tags: [labwork]
+      operationId: getLabWorkById
+      summary: Получить элемент по идентификатору
+      description: Возвращает объект коллекции по его идентификатору.
+      parameters:
+        - $ref: '#/components/parameters/idPath'
+      responses:
+        '200':
+          description: Объект найден.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabWork'
+        '400':
+          description: Некорректный идентификатор (например, отрицательное значение).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: "Некорректный идентификатор"
+        '404':
+          description: Объект с указанным id не найден.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: "Лабораторная работа не найдена"
+        '500':
+          description: Внутренняя ошибка сервера.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: "Внутренняя ошибка сервера"
+
+  /labworks/by-max-person-min:
+    get:
+      tags: [labwork]
+      operationId: getLabWorkWithMinimalAuthor
+      summary: Вернуть объект с минимальным значением author
+      description: |
+        Возвращает один (любой) объект коллекции, значение поля `author` которого является минимальным
+        среди всех авторов (в рамках сравнимых значений `Person`).
+      responses:
+        '200':
+          description: Найден объект с минимальным автором.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabWork'
+        '404':
+          description: Коллекция пуста или ни один объект не содержит автора.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: "Коллекция пуста или автор отсутствует"
+        '500':
+          description: Внутренняя ошибка сервера.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: "Внутренняя ошибка сервера"
+
+  /labworks/by-difficulty:
+    get:
+      tags: [labwork]
+      operationId: countLabWorksByDifficulty
+      summary: Количество объектов с заданной сложностью
+      description: Возвращает количество объектов, значение поля `difficulty` которых равно заданному.
+      parameters:
+        - $ref: '#/components/parameters/qDifficultyRequired'
+      responses:
+        '200':
+          description: Количество найденных объектов.
+          content:
+            application/json:
+              schema:
+                type: integer
+                format: int64
+                example: 3
+        '400':
+          description: Некорректное значение difficulty.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: "Некорректное значение difficulty"
+        '500':
+          description: Внутренняя ошибка сервера.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: "Внутренняя ошибка сервера"
+
+  /labworks/by-minimal-point-greater-than:
+    get:
+      tags: [labwork]
+      operationId: getLabWorksWithMinimalPointGreaterThan
+      summary: Вернуть объекты с минимальной точкой больше заданной
+      description: Возвращает массив объектов, значение поля `minimalPoint` которых больше заданного.
+      parameters:
+        - $ref: '#/components/parameters/qMinimalPointRequired'
+      responses:
+        '200':
+          description: Массив подходящих объектов.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LabWork'
+        '400':
+          description: Заданное значение не является допустимым.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: "Заданное значение не является допустимым"
+        '500':
+          description: Внутренняя ошибка сервера.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: "Внутренняя ошибка сервера"
+
+
+  /bars/discipline/{discipline-id}/labwork/{labwork-id}/add:
+    post:
+      tags: [bars]
+      operationId: addLabWorkToDiscipline
+      summary: Добавить лабораторную работу в программу дисциплины
+      description: |
+        Добавляет лабораторную работу (по `labwork-id`) в программу дисциплины (по `discipline-id`).
+        Внутри сервис обращается к API первого сервиса для проверки существования лабораторной работы.
+      parameters:
+        - $ref: '#/components/parameters/pathDisciplineId'
+        - $ref: '#/components/parameters/pathLabworkId'
+      responses:
+        '200':
+          description: Работа успешно добавлена в программу дисциплины.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabWork'
+        '400':
+          description: Некорректные идентификаторы.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: "Некорректные идентификаторы"
+        '404':
+          description: Лабораторная работа или дисциплина не найдены.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: "Лабораторная работа или дисциплина не найдена"
+        '409':
+          description: Работа уже добавлена в программу дисциплины.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 409
+                message: "Работа уже добавлена в программу дисциплины"
+        '500':
+          description: Внутренняя ошибка сервера (в т.ч. сбой вызова первого сервиса).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: "Внутренняя ошибка сервера"
+
+
+  /bars/labwork/{labwork-id}/difficulty/increase:
+    post:
+      tags: [bars]
+      operationId: increaseDifficulty
+      summary: Повысить сложность лабораторной работы
+      description: |
+        Повышает сложность заданной лабораторной работы на указанное число «шагов» по шкале
+        `NORMAL -> INSANE -> TERRIBLE`. При превышении максимального значения возвращает ошибку.
+      parameters:
+        - $ref: '#/components/parameters/pathLabworkId'
+        - $ref: '#/components/parameters/pathStepsCount'
+      responses:
+        '200':
+          description: Сложность успешно повышена.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabWork'
+        '400':
+          description: Некорректный шаг или превышение максимальной сложности.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 400
+                message: "Некорректный шаг или превышение максимальной сложности"
+        '404':
+          description: Лабораторная работа не найдена.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 404
+                message: "Лабораторная работа не найдена"
+        '500':
+          description: Внутренняя ошибка сервера (в т.ч. сбой вызова первого сервиса).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                status: 500
+                message: "Внутренняя ошибка сервера"
+
+components:
+  parameters:
+    idPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+      description: Идентификатор лабораторной работы (значение > 0).
+
+    qId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+      description: Идентификатор лабораторной работы (значение > 0).
+
+    qLabworkId:
+      name: labwork-id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+      description: Идентификатор лабораторной работы.
+
+    pathLabworkId:
+      name: labwork-id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+      description: Идентификатор лабораторной работы.
+
+    pathDisciplineId:
+      name: discipline-id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+      description: Идентификатор дисциплины.
+
+    pathStepsCount:
+      name: steps-count
+      in: query
+      required: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+      description: Количество шагов повышения сложности (значение >= 1).
+
+    qMinimalPointRequired:
+      name: minimal-point
+      in: query
+      required: true
+      schema:
+        type: number
+        format: double
+      description: Пороговое значение поля `minimalPoint`.
+
+    qDifficultyRequired:
+      name: difficulty
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/Difficulty'
+      description: Значение сложности для подсчёта количества.
+
+    qName:
+      name: name
+      in: query
+      required: true
+      schema:
+        type: string
+        minLength: 1
+      description: Название лабораторной работы. Не может быть null, строка не может быть пустой.
+
+    qX:
+      name: x
+      in: query
+      required: true
+      schema:
+        type: number
+        format: float
+        maximum: 678
+      description: Координата x (максимум 678). Не может быть null.
+
+    qY:
+      name: y
+      in: query
+      required: true
+      schema:
+        type: number
+        format: float
+        minimum: -963
+        exclusiveMinimum: true
+      description: Координата y (должна быть больше -963). Не может быть null.
+
+    qMinimalPoint:
+      name: minimal-point
+      in: query
+      required: true
+      schema:
+        type: number
+        format: double
+        minimum: 0
+        exclusiveMinimum: true
+      description: Минимальный балл. Должен быть больше 0.
+
+    qPersonalQualitiesMinimum:
+      name: personal-qualities-minimum
+      in: query
+      required: true
+      schema:
+        type: number
+        format: double
+        minimum: 0
+        exclusiveMinimum: true
+      description: Минимальные личные качества. Должно быть больше 0.
+
+    qAveragePoint:
+      name: average-point
+      in: query
+      required: true
+      schema:
+        type: number
+        format: double
+        minimum: 0
+        exclusiveMinimum: true
+      description: Средний балл. Должен быть больше 0.
+
+    qDifficulty:
+      name: difficulty
+      in: query
+      required: true
+      schema:
+        $ref: '#/components/schemas/Difficulty'
+      description: Сложность лабораторной работы.
+
+    qAuthorName:
+      name: author-name
+      in: query
+      required: false
+      schema:
+        type: string
+        minLength: 1
+      description: Имя автора. Не может быть пустым, если указано.
+
+    qAuthorBirthday:
+      name: author-birthday
+      in: query
+      required: false
+      schema:
+        type: string
+        format: date
+      description: Дата рождения автора. Может отсутствовать.
+
+    qAuthorHeight:
+      name: author-height
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+        exclusiveMinimum: true
+      description: Рост автора. Должен быть больше 0.
+
+    qAuthorWeight:
+      name: author-weight
+      in: query
+      required: false
+      schema:
+        type: number
+        format: double
+        minimum: 0
+        exclusiveMinimum: true
+      description: Вес автора. Должен быть больше 0.
+
+    qAuthorPassportID:
+      name: author-passport-id
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 34
+      description: Паспортные данные автора. Длина не более 34.
+
+    page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        default: 1
+      description: |
+        Номер страницы (начиная с 1). Если значение выходит за пределы доступного
+        диапазона, возвращается пустой массив.
+
+    size:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 1000
+        default: 50
+      description: | 
+        Размер страницы. Допустимый диапазон: [1, 1000]. По умолчанию 50.
+
+    sort:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+        pattern: '^[A-Za-z]+(\.[A-Za-z]+)*:(asc|desc)(,[A-Za-z]+(\.[A-Za-z]+)*:(asc|desc))*$'
+        example: "name:asc,coordinates.x:desc,author.height:asc"
+      description: |
+        Единый параметр сортировки. Формат: `поле:направление`, где направление — `asc` или `desc`.
+        Несколько правил разделяются запятой. Правила применяются последовательно:
+        первое правило — первичный ключ, второе — вторичный и т.д.
+        Поддерживается сортировка по любому полю класса, включая вложенные.
+        Допустимые поля перечислены в схеме `SortField`.
+        Пример: `?sort=name:asc,coordinates.x:desc,author.height:asc`.
+
+    filter:
+      name: filter
+      in: query
+      required: false
+      schema:
+        type: string
+        example: "difficulty:eq:TERRIBLE,minimalPoint:gt:10,author.name:contains:Ivan"
+      description: |
+        Единый параметр фильтрации. Формат условия: `поле:оператор:значение`.
+        Несколько условий разделяются запятой и объединяются логическим **AND**.
+        Поддерживается фильтрация по любому полю класса, включая вложенные.
+        Допустимые поля перечислены в схеме `FilterField`.
+        Допустимые операторы и их применимость к типам — в схеме `FilterOperator`.
+        Пример: `?filter=difficulty:eq:TERRIBLE,minimalPoint:gt:10,author.name:contains:Ivan`.
+
+  schemas:
+    Difficulty:
+      type: string
+      enum: [NORMAL, INSANE, TERRIBLE]
+      description: Сложность лабораторной работы.
+
+    SortField:
+      type: string
+      description: |
+        Допустимое поле сортировки. Поддерживаются как простые поля класса `LabWork`,
+        так и вложенные поля (`coordinates.x`, `coordinates.y`, `author.*`).
+      enum:
+        - id
+        - name
+        - coordinates.x
+        - coordinates.y
+        - creationDate
+        - minimalPoint
+        - personalQualitiesMinimum
+        - averagePoint
+        - difficulty
+        - author.name
+        - author.birthday
+        - author.height
+        - author.weight
+        - author.passportID
+
+    FilterField:
+      type: string
+      description: |
+        Допустимое поле фильтрации. Поддерживаются как простые поля класса `LabWork`,
+        так и вложенные поля (`coordinates.x`, `coordinates.y`, `author.*`).
+        Поле `author` используется для проверки наличия/отсутствия автора
+        операторами `isnull`/`notnull`.
+      enum:
+        - id
+        - name
+        - coordinates.x
+        - coordinates.y
+        - creationDate
+        - minimalPoint
+        - personalQualitiesMinimum
+        - averagePoint
+        - difficulty
+        - author
+        - author.name
+        - author.birthday
+        - author.height
+        - author.weight
+        - author.passportID
+
+    FilterOperator:
+      type: string
+      description: |
+        Оператор фильтрации:
+        * `eq` — равно (применим ко всем типам);
+        * `ne` — не равно (применим ко всем типам);
+        * `gt` — больше (числа, даты, строки — лексикографически);
+        * `ge` — больше или равно (числа, даты, строки — лексикографически);
+        * `lt` — меньше (числа, даты, строки — лексикографически);
+        * `le` — меньше или равно (числа, даты, строки — лексикографически);
+        * `contains` — содержит подстроку (только строковые поля);
+        * `isnull` — поле равно null (только nullable-поля, значение не указывается);
+        * `notnull` — поле не равно null (только nullable-поля, значение не указывается).
+      enum:
+        - eq
+        - ne
+        - gt
+        - ge
+        - lt
+        - le
+        - contains
+        - isnull
+        - notnull
+
+    Coordinates:
+      type: object
+      required: [x, y]
+      properties:
+        x:
+          type: number
+          format: float
+          maximum: 678
+          description: Максимальное значение — 678. Поле не может быть null.
+        y:
+          type: number
+          format: float
+          minimum: -963
+          exclusiveMinimum: true
+          description: Значение должно быть больше -963. Поле не может быть null.
+      description: Координаты лабораторной работы.
+
+    Person:
+      type: object
+      required: [name, weight]
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Имя автора. Не может быть null, строка не может быть пустой.
+        birthday:
+          type: string
+          format: date
+          nullable: true
+          description: Дата рождения. Поле может быть null.
+        height:
+          type: integer
+          format: int64
+          minimum: 0
+          exclusiveMinimum: true
+          description: Рост. Значение должно быть больше 0.
+        weight:
+          type: number
+          format: double
+          minimum: 0
+          exclusiveMinimum: true
+          description: Вес. Не может быть null, значение должно быть больше 0.
+        passportID:
+          type: string
+          maxLength: 34
+          nullable: true
+          description: Паспортные данные. Длина не более 34. Поле может быть null.
+      description: Автор лабораторной работы.
+
+    LabWork:
+      type: object
+      required: [id, name, coordinates, creationDate, minimalPoint, personalQualitiesMinimum, averagePoint, difficulty]
+      properties:
+        id:
+          type: integer
+          format: int32
+          minimum: 1
+          readOnly: true
+          description: Уникальный идентификатор. Генерируется автоматически.
+        name:
+          type: string
+          minLength: 1
+          description: Название. Не может быть null, строка не может быть пустой.
+        coordinates:
+          $ref: '#/components/schemas/Coordinates'
+        creationDate:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Дата создания. Не может быть null. Генерируется автоматически.
+        minimalPoint:
+          type: number
+          format: double
+          minimum: 0
+          exclusiveMinimum: true
+          description: Минимальный балл. Должен быть больше 0.
+        personalQualitiesMinimum:
+          type: number
+          format: double
+          minimum: 0
+          exclusiveMinimum: true
+          description: Минимальные личные качества. Должно быть больше 0.
+        averagePoint:
+          type: number
+          format: double
+          minimum: 0
+          exclusiveMinimum: true
+          description: Средний балл. Должен быть больше 0.
+        difficulty:
+          $ref: '#/components/schemas/Difficulty'
+        author:
+          allOf:
+            - $ref: '#/components/schemas/Person'
+          nullable: true
+          description: Автор. Поле может быть null.
+      description: Объект лабораторной работы.
+
+    Error:
+      type: object
+      required: [status, message]
+      properties:
+        status:
+          type: integer
+          format: int32
+          example: 404
+          description: HTTP-код ошибки.
+        message:
+          type: string
+          example: "Лабораторная работа не найдена"
+          description: Человекочитаемое описание ошибки.
+      description: Тело ошибки с кодом статуса и сообщением.

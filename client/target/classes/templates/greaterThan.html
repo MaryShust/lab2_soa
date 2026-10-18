@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>minimalPoint &gt; X</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<header>
+    <h1>Объекты с minimalPoint больше заданного</h1>
+    <nav><a th:href="@{/}">Коллекция</a></nav>
+</header>
+<main>
+    <div class="error" th:if="${error}" th:text="${error}"></div>
+    <form method="get" th:action="@{/special/greater-than}">
+        <label>Значение <input type="number" step="any" name="value" th:value="${value}"/></label>
+        <button type="submit">Найти</button>
+    </form>
+
+    <table th:if="${labWorks != null and !labWorks.isEmpty()}">
+        <thead>
+        <tr>
+            <th>ID</th><th>Название</th><th>minimalPoint</th><th>Сложность</th><th></th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="lw : ${labWorks}">
+            <td th:text="${lw.id}"></td>
+            <td th:text="${lw.name}"></td>
+            <td th:text="${lw.minimalPoint}"></td>
+            <td th:text="${lw.difficulty}"></td>
+            <td><a th:href="@{'/labworks/' + ${lw.id}}">Открыть</a></td>
+        </tr>
+        </tbody>
+    </table>
+    <p th:if="${value != null and (labWorks == null or labWorks.isEmpty())}">Ничего не найдено.</p>
+</main>
+</body>
+</html>

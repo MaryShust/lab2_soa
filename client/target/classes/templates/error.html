@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Ошибка</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<header>
+    <h1>Ошибка</h1>
+    <nav><a th:href="@{/}">Коллекция</a></nav>
+</header>
+<main>
+    <div class="error" th:text="${error}">Произошла ошибка</div>
+</main>
+</body>
+</html>

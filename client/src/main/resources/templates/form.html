@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title th:text="${mode == 'edit' ? 'Изменить LabWork' : 'Добавить LabWork'}">Форма</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<header>
+    <h1 th:text="${mode == 'edit' ? 'Изменение лабораторной работы' : 'Новая лабораторная работа'}"></h1>
+    <nav>
+        <a th:href="@{/}">Коллекция</a>
+    </nav>
+</header>
+<main>
+    <div class="error" th:if="${error}" th:text="${error}"></div>
+
+    <form method="post"
+          th:action="${mode == 'edit'} ? @{'/labworks/' + ${id}} : @{/labworks}"
+          th:object="${form}" class="edit-form">
+        <fieldset>
+            <legend>Основные поля</legend>
+            <label>Название* <input type="text" th:field="*{name}" required/></label>
+            <label>Координата X* (≤ 678) <input type="number" step="any" th:field="*{x}" required/></label>
+            <label>Координата Y* (&gt; -963) <input type="number" step="any" th:field="*{y}" required/></label>
+            <label>minimalPoint* (&gt; 0) <input type="number" step="any" th:field="*{minimalPoint}" required/></label>
+            <label>personalQualitiesMinimum* (&gt; 0)
+                <input type="number" step="any" th:field="*{personalQualitiesMinimum}" required/></label>
+            <label>averagePoint* (&gt; 0)
+                <input type="number" step="any" th:field="*{averagePoint}" required/></label>
+            <label>Сложность*
+                <select th:field="*{difficulty}" required>
+                    <option value="NORMAL">NORMAL</option>
+                    <option value="INSANE">INSANE</option>
+                    <option value="TERRIBLE">TERRIBLE</option>
+                </select>
+            </label>
+        </fieldset>
+        <fieldset>
+            <legend>Автор (необязательно)</legend>
+            <label>Имя автора <input type="text" th:field="*{authorName}"/></label>
+            <label>Дата рождения <input type="date" th:field="*{authorBirthday}"/></label>
+            <label>Рост (&gt; 0) <input type="number" th:field="*{authorHeight}"/></label>
+            <label>Вес (&gt; 0) <input type="number" step="any" th:field="*{authorWeight}"/></label>
+            <label>Паспорт (≤ 34) <input type="text" maxlength="34" th:field="*{authorPassportID}"/></label>
+        </fieldset>
+        <button type="submit">Сохранить</button>
+    </form>
+</main>
+</body>
+</html>

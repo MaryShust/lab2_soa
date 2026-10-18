@@ -1,0 +1,122 @@
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    margin: 0;
+    background: #f4f6f8;
+    color: #1f2a37;
+}
+
+header {
+    background: #1f2a37;
+    color: #fff;
+    padding: 16px 24px;
+}
+
+header h1 {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+}
+
+header nav a {
+    color: #9ecbff;
+    margin-right: 16px;
+    text-decoration: none;
+}
+
+header nav a:hover {
+    text-decoration: underline;
+}
+
+main {
+    padding: 24px;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+th, td {
+    border: 1px solid #d5dbe2;
+    padding: 8px 10px;
+    text-align: left;
+    font-size: 14px;
+}
+
+th {
+    background: #e8edf3;
+}
+
+.filters, .edit-form, form {
+    margin-bottom: 16px;
+}
+
+label {
+    display: block;
+    margin: 8px 0;
+}
+
+input, select {
+    padding: 6px;
+    border: 1px solid #b7c0cb;
+    border-radius: 4px;
+}
+
+button {
+    padding: 8px 14px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #1d4ed8;
+}
+
+button.danger {
+    background: #dc2626;
+}
+
+button.danger:hover {
+    background: #b91c1c;
+}
+
+.error {
+    background: #fde8e8;
+    color: #9b1c1c;
+    border: 1px solid #f8b4b4;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+.message {
+    background: #e6f6ea;
+    color: #14653a;
+    border: 1px solid #a3e0b5;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+.empty {
+    color: #6b7280;
+}
+
+fieldset {
+    border: 1px solid #d5dbe2;
+    margin-bottom: 16px;
+    background: #fff;
+    padding: 12px 16px;
+}
+
+legend {
+    font-weight: bold;
+}
+
+table.detail th {
+    width: 220px;
+}

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Подсчёт по сложности</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<header>
+    <h1>Количество объектов с заданной сложностью</h1>
+    <nav><a th:href="@{/}">Коллекция</a></nav>
+</header>
+<main>
+    <div class="error" th:if="${error}" th:text="${error}"></div>
+    <form method="get" th:action="@{/special/by-difficulty}">
+        <label>Сложность
+            <select name="difficulty">
+                <option value="NORMAL" th:selected="${difficulty == 'NORMAL'}">NORMAL</option>
+                <option value="INSANE" th:selected="${difficulty == 'INSANE'}">INSANE</option>
+                <option value="TERRIBLE" th:selected="${difficulty == 'TERRIBLE'}">TERRIBLE</option>
+            </select>
+        </label>
+        <button type="submit">Посчитать</button>
+    </form>
+
+    <p th:if="${count != null}">
+        Количество объектов со сложностью
+        <strong th:text="${difficulty}"></strong>:
+        <strong th:text="${count}"></strong>
+    </p>
+</main>
+</body>
+</html>

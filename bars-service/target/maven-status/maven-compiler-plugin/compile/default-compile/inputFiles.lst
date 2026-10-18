@@ -1,0 +1,17 @@
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\BarsApplication.java
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\client\LabWorkClient.java
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\client\LabWorkQueryBuilder.java
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\config\ServiceConfig.java
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\JacksonProvider.java
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\model\Coordinates.java
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\model\Difficulty.java
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\model\ErrorResponse.java
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\model\LabWork.java
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\model\Person.java
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\resource\BarsExceptionMapper.java
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\resource\DifficultyResource.java
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\resource\DisciplineResource.java
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\resource\UpstreamExceptionMapper.java
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\service\BarsService.java
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\service\DisciplineStore.java
+C:\Users\user\IdeaProjects\lab2_soa\bars-service\src\main\java\inf_system\lab2\bars\service\LabWorkClientProducer.java
